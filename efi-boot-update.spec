@@ -48,9 +48,9 @@ rm -rf $RPM_BUILD_ROOT
 # Most efi-boot-update-managed loaders will use kernel files
 # even if the kernel itself is not build as EFI
 %triggerin -- kernel
-/sbin/efi-boot-update
+/sbin/efi-boot-update || :
 %triggerin -- kernel-longterm
-/sbin/efi-boot-update
+/sbin/efi-boot-update || :
 
 %files
 %defattr(644,root,root,755)
