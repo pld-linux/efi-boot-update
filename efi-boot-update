@@ -261,9 +261,9 @@ for bootloader_conf in /etc/efi-boot/update.d/*.conf ; do
     fi
 done
 
-if [ -n "$ORDER" ] ; then
+if [ -n "$ORDER" -a "$EFIBOOTMGR" != "/bin/true" ] ; then
     # set up the configured boot order, not removing any existing entries
-    tail="$(efibootmgr | awk '/^BootOrder:/ {gsub(/,/," ",$2); print $2}')"
+    tail="$($EFIBOOTMGR | awk '/^BootOrder:/ {gsub(/,/," ",$2); print $2}')"
     head=""
     for config_name in $ORDER ; do
         eval "bootnum=\$_${config_name}_bootnum"
