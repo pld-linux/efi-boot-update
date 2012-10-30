@@ -1,4 +1,4 @@
-(U)EFI bootloaders updater
+(U)EFI boot loaders updater
 ==========================
 
 What is this for?
@@ -20,16 +20,16 @@ will be copied to the EFI system partition using rules defined in
 /etc/efi-boot/update.d/*.conf files (efi-boot-update modules).
 
 efi-boot-update will also manage EFI boot manager configuration, adding
-the configured boot loaders to the platform boot menu, provided the 'efibootmgr'
-package is installed and functional.
+the configured boot loaders to the platform boot menu, provided the
+'efibootmgr' package is installed and functional.
 
 
 What is this not?
 -----------------
 
-This is not another configuration interface for the bootloaders. efi-boot-update can copy
-bootloader configuration files to the EFI system partition, but it doesn't
-care about their contents or syntax. 
+This is not another configuration interface for the boot loaders.
+efi-boot-update can copy boot loader configuration files to the EFI system
+partition, but it doesn't care about their contents or syntax. 
 
 User Guide
 ----------
@@ -44,6 +44,9 @@ in /etc/efi-boot/update.d (these configure rules for a specific application).
 
 The administrator is also responsible to edit any configuration files used by
 the boot loaders (usually in /etc/efi-boot).
+
+efi-boot-update should be manually called whenever any of these files
+have been edited.
 
 /etc/efi-boot/update.conf
 .........................
@@ -69,29 +72,31 @@ Following variables can be set there:
 modules in /etc/efi-boot/update.d
 .................................
 
-The *.conf files in the /etc/efi-boot/update.d directory provide rules for installing
-a boot loader and creating the EFI boot manager label for it.
+The *.conf files in the /etc/efi-boot/update.d directory provide rules for
+installing a boot loader and creating the EFI boot manager label for it.
 
 Following variables can be be set for each module:
 
-  * ENABLED – when 'yes', then the files will be copied and a boot manager entry will be created
-    for the application (provided BINARY is also set)
-  * LABEL – label to use for the boot manager entry (defaults to the module name)
-  * BINARY – name of the EFI binary installed in /boot/efi/EFI/$PLATFORM_DIR or a
-    path to any EFI binary existing on the EFI system partition
+  * ENABLED – when 'yes', then the files will be copied and a boot manager
+    entry will be created for the application (provided BINARY is also set)
+  * LABEL – label to use for the boot manager entry (defaults to the module
+    name)
+  * BINARY – name of the EFI binary installed in /boot/efi/EFI/$PLATFORM_DIR
+    or a path to any EFI binary existing on the EFI system partition
   * ARGS – command line arguments for the EFI application
   * ARCH – architecture the binary is built for
 
-The module may define more configurable variables, but should use own unique prefix for them.
+The module may define more configurable variables, but should use own unique
+prefix for them.
 
-The module file should also contain a install_files() function definition which defines
-what files are to be installed on the EFI system partition.
+The module file should also contain a install_files() function definition
+which defines what files are to be installed on the EFI system partition.
 
-It can contain any shell code, but should not define any new global variables. For
-convenience following are defined:
+It can contain any shell code, but should not define any new global variables.
+For convenience following are defined:
 
-  * '$DESTDIR' variable – defines the directory where the files should be copied to
-    that will be /boot/efi/EFI/$PLATFORM_DIR
+  * '$DESTDIR' variable – defines the directory where the files should be
+    copied to that will be /boot/efi/EFI/$PLATFORM_DIR
   * 'update_file' function – copies a file to the EFI partition
 
     Usage:
@@ -101,8 +106,44 @@ convenience following are defined:
         SOURCE      – absolute path to the file to be copied
         DEST        – destination file name. Absolute (but should be in
                       /boot/efi) or, preferably, Relative to $DESTDIR
-        --missingok – when used, he command will not complain when the SOURCE does not exist
+	--missingok – when used, he command will not complain when the SOURCE
+                      does not exist
 
     update_file behaviour depends on the '--verbose' and '--force' options
     passed to the efi-boot-update script.
+
+Trouble shooting
+----------------
+
+> efi-boot-update: EFI system partition not mounted.
+
+To boot from EFI you need a GUID Partition Table on your HDD containing the
+EFI system partition. And efi-boot-update needs the partition mounted at
+/boot/efi
+
+When used with '--mount' option, efi-boot-update will try to find an mount the
+partition, but for proper operation during package installation/upgrades the
+partition should be always mounted.
+
+> efi-boot-update: efibootmgr missing, won't update the boot manager
+> configuration
+
+efi-boot-update needs the 'efibootmgr' utility to update the EFI boot manager
+configuration.
+
+> efi-boot-update: efibootmgr does not work (efivars interface not available?)
+> efi-boot-update: won't update boot manager configuration
+
+The 'efibootmgr' does not always wark. It needs the 'efivars' kernel module
+loaded (efi-boot-update takes care of that) and functioning correctly. This is
+not always the case. The 'efivars' module works only when the kernel was
+booted via EFI. If kernel has been started from from BIOS or is running
+under Xen 'efibootmgr' won't work.
+
+This causes a little boot strapping problem – you cannot use efi-boot-update
+alone to configure system for the first UEFI boot.
+
+efi-boot-update can still copy the files to the EFI partition, but one has
+to manually select the boot loader via the EFI platform configuration
+interface.
 
