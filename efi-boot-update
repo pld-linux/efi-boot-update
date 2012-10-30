@@ -1,0 +1,273 @@
+#!/bin/sh
+
+_SCRIPT_NAME=efi-boot-update
+_SCRIPT_VERSION=0.0
+
+. /etc/rc.d/init.d/functions
+
+usage () {
+
+    echo "Usage: $0 OPTIONS"
+    echo "Update EFI boot loaders"
+    echo
+    echo "  --version      Show version number"
+    echo "  --help, -h     This help message"
+    echo "  --mount, -m    Try to mount /boot/efi first"
+    echo "  --verbose, -v  Verbose output"
+    echo "  --force        Force file updates"
+}
+
+msg () {
+    echo "efi-boot-update: $*" >&2
+}
+
+verbose () {
+    if is_yes "$VERBOSE" ; then 
+        echo "efi-boot-update: $*" >&2
+    fi
+}
+
+verbose_cmd () {
+    if is_yes "$VERBOSE" ; then
+        echo "+$*" >&2
+    fi
+    "$@"
+}
+
+
+list_remove () {
+
+    for item in $1 ; do
+        if [ "$item" = "$2" ] ; then
+            continue
+        fi
+        echo -n "$item "
+    done
+}
+
+update_file () {
+    local cmd
+    local src
+    local dest
+    while [ -n "$1" ] ; do
+        case $1 in 
+            --missingok)
+                shift
+                [ -e "$1" ] || return 0
+                ;;
+            --*)
+                msg "update_file: ignoring unknown option: $1"
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+    src="$1"; shift
+    dst="$2"; shift
+    if [ -n "$*" ] ; then
+        msg "update_file: unexpected arguments: $*"
+        return 1
+    fi
+    if [ "${dst#/}" = "${dst}" ] ; then
+        # relative path
+        dst="$DESTDIR/$dst"
+    fi
+    if is_yes "$FORCE_UPDATES" ; then
+        is_yes "$VERBOSE" && echo +cp --force --preserve=timestamps "$src" "$dst"
+        cp --force --preserve=timestamps "$src" "$dst"
+    else
+        is_yes "$VERBOSE" && echo +cp --update --preserve=timestamps "$src" "$dst"
+        cp --update --preserve=timestamps "$src" "$dst"
+    fi
+}
+
+get_efibootmgr_opts() {
+    local efi_disk
+    local efi_partnum
+    efi_disk=$(mount | awk '$3=="/boot/efi" {print $1}' 2>/dev/null)
+    EFIBOOTMGR_OPTS="--gpt"
+    if [ -n "$efi_disk" ] ; then
+        efi_partnum="$(echo $efi_disk|sed -e's;^.*[^0-9]\([0-9]\+\)$;\1;')"
+        efi_disk="$(echo $efi_disk|sed -e's;^\(.*\)[0-9]\+$;\1;')"
+        if [ -b "$efi_disk" -a -n "$efi_partnum" ] ; then 
+            EFIBOOTMGR_OPTS="$EFIBOOTMGR_OPTS --disk $efi_disk"
+            EFIBOOTMGR_OPTS="$EFIBOOTMGR_OPTS --part $efi_partnum"
+        fi
+    fi
+    echo -n $EFIBOOTMGR_OPTS
+}
+
+find_bootmgr_entry () {
+
+    $EFIBOOTMGR | awk -v find="$1" '
+/^Boot[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]\*?/ { 
+                                sub(/^Boot/,""); 
+                                sub(/\*/,""); 
+                                num=$1; 
+                                $1=""; 
+                                gsub(/^[ \t]+|[ \t]+$/,""); 
+                                if ($0 == find) print num
+                            }'
+}
+        
+remove_bootmgr_entry () {
+    local bootnum
+    bootnum=$(find_bootmgr_entry "$1")
+    [ -n "$bootnum" ] || return 0
+    verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --delete-bootnum -b --quiet "$bootnum"
+    echo -n "$bootnum"
+}
+
+add_bootmgr_entry () {
+    local label=$1
+    local binary=$2
+    local args=$3
+    local bootnum
+    bootnum=$(find_bootmgr_entry "$label")
+
+    if [ "${binary#/}" = "${binary}" ] ; then
+        # relative path
+        binary="$DESTDIR/$binary"
+    fi
+    binary="${binary#/boot/efi}"
+    binary="$(echo -n "$binary"|sed -e's;/;\\;g')"
+
+    if [ -n "$bootnum" ] ; then
+        echo -n "$args" | verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --quiet \
+                            --bootnum "$bootnum" --loader "$binary" -@ -
+    else
+        echo -n "$args" | verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --create \
+                            --quiet --label "$label" --loader "$binary" -@ -
+        bootnum="$(find_bootmgr_entry "$label")"
+    fi
+    echo -n "$bootnum"
+}
+
+FORCE_UPDATES="no"
+MOUNT_EFI_PARTITION="no"
+LABEL_PREFIX=""
+DEFAULT=""
+VERBOSE="no"
+
+[ -e /etc/efi-boot/update.conf ] && . /etc/efi-boot/update.conf
+
+while [ -n "$*" ] ; do
+    local arg
+    arg="$1"
+    shift
+    case $arg in
+        --help|-h)
+            usage
+            exit 0
+            ;;
+        --version)
+            echo "$_SCRIPT_NAME $_SCRIPT_VERSION"
+            exit 0
+            ;;
+        --mount|-m)
+            MOUNT_EFI_PARTITION=yes
+            ;;
+        --verbose|-v)
+            VERBOSE=yes
+            ;;
+        --force)
+            FORCE_UPDATES="yes"
+            ;;
+        *)
+            usage >&2
+            exit 2
+            ;;
+    esac
+done
+
+if ! mountpoint -q /boot/efi ; then
+    mkdir -p /boot/efi
+    if is_yes "$MOUNT_EFI_PARTITION" ; then
+        # first try via fstab
+        if ! mount /boot/efi 2>/dev/null ; then
+            local efi_device
+            efi_device="$(/sbin/blkid -o device -l -t PARTUUID="54f69bcc-954d-4f97-8fef-80b359f9e4aa")"
+            if [ -z "$efi_device" ] ; then
+                msg "EFI system partition not found."
+                exit 1
+            fi
+            mount -t vfat "$efi_device" /boot/efi
+        fi
+    fi
+    if ! mountpoint -q /boot/efi ; then
+        msg "EFI system partition not mounted."
+        exit 1
+    fi
+fi
+
+if [ -x /usr/sbin/efibootmgr ] ; then
+    modprobe -q efivars
+    EFIBOOTMGR=/usr/sbin/efibootmgr
+    if ! $EFIBOOTMGR >/dev/null 2>&1 ; then
+        msg "efibootmgr does not work (efivars interface not available?)"
+        msg "won't update boot manager configuration"
+        EFIBOOTMGR=/bin/true
+    else
+        EFIBOOTMGR_OPTS="$(get_efibootmgr_opts)"
+    fi
+else
+    msg "efibootmgr missing, won't update the boot manager configuration"
+    EFIBOOTMGR=/bin/true
+fi
+
+
+for bootloader_conf in /etc/efi-boot/update.d/*.conf ; do
+    if [ ! -e "$bootloader_conf" ] ; then
+        continue
+    fi
+    ENABLED=yes
+    CONFIG_NAME="$(basename "$bootloader_conf" .conf)"
+    LABEL="$CONFIG_NAME"
+    ARCH="$(uname -m)"
+    BINARY=""
+    ARGS=""
+    install_files() {}
+
+    . "$bootloader_conf" || continue
+
+    LABEL="$LABEL_PREFIX$LABEL"
+
+    if ! is_yes "$ENABLED" ; then
+        remove_bootmgr_entry "$LABEL"
+        continue
+    fi
+
+    DESTDIR="/boot/efi/EFI/$(echo -n "$PLATFORM_DIR"|sed -e's/@ARCH@/'"$ARCH"'/')"
+    mkdir -p "$DESTDIR"
+
+    verbose "Updating $LABEL..."
+    install_files
+    if [ -n "$BINARY" ] ; then
+            bootnum="$(add_bootmgr_entry "$LABEL" "$BINARY" "$ARGS")"
+            eval "_${CONFIG_NAME}_bootnum=\"$bootnum\""
+    fi
+done
+
+if [ -n "$ORDER" ] ; then
+    set -x
+    # set up the configured boot order, not removing any existing entries
+    tail="$(efibootmgr | awk '/^BootOrder:/ {gsub(/,/," ",$2); print $2}')"
+    head=""
+    for config_name in $ORDER ; do
+        eval "bootnum=\$_${config_name}_bootnum"
+        if [ -z "$bootnum" ] ; then
+            msg "Cannot find '$config_name' config - won't add to boot order."
+            continue
+        fi
+        tail="$(list_remove "$tail" "$bootnum")"
+        head="$head $bootnum"
+    done
+    bootorder="$(echo -n $head $tail | sed -e's/ /,/g')"
+    if [ -n "$bootorder" ] ; then
+        verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --quiet --bootorder "$bootorder"
+    fi
+fi
+
+# vi: ft=sh sw=4 sts=4 et

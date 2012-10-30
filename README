@@ -1,0 +1,26 @@
+(U)EFI bootloaders updater
+==========================
+
+What is this for?
+-----------------
+
+(U)EFI systems boot using bootloaders on a special EFI System Partition.
+Many different bootloaders may be present at a time. These are not only
+traditional bootloaders like GRUB, but arbitrary 'EFI applications'.
+
+Xen or Linux kernel can be built as an EFI application too and booted directly
+from the EFI firmware. The problem is the kernels and data or config files
+needed for boot must be stored on the EFI System Partition, but that is not
+the place where they are installed on package upgrade. And it is hard to
+install files from RPM packages there directly.
+
+efi-boot-update script makes it easy to manage the files on the EFI system
+partition. Those files are to be installed in the regular Linux system and
+will be copied to the EFI system partition using rules defined in
+/etc/efi-boot/update.d/*.conf files.
+
+efi-boot-update will also manage EFI boot manager configuration, adding
+the configured bootloaders to the platform boot menu, provided the 'efibootmgr'
+package is installed and functional.
+
+

@@ -1,0 +1,5 @@
+
+TODO:
+   - complete the documentation
+   - support for boot entries for anything else that files in /boot/efi
+   - handle /dev/something0p1 partition devices
