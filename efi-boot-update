@@ -227,7 +227,9 @@ for bootloader_conf in /etc/efi-boot/update.d/*.conf ; do
     ARCH="$(uname -m)"
     BINARY=""
     ARGS=""
-    install_files() {}
+    install_files() {
+        /bin/true
+    }
 
     . "$bootloader_conf" || continue
 
