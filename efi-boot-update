@@ -251,7 +251,6 @@ for bootloader_conf in /etc/efi-boot/update.d/*.conf ; do
 done
 
 if [ -n "$ORDER" ] ; then
-    set -x
     # set up the configured boot order, not removing any existing entries
     tail="$(efibootmgr | awk '/^BootOrder:/ {gsub(/,/," ",$2); print $2}')"
     head=""
