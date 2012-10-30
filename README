@@ -4,9 +4,9 @@
 What is this for?
 -----------------
 
-(U)EFI systems boot using bootloaders on a special EFI System Partition.
-Many different bootloaders may be present at a time. These are not only
-traditional bootloaders like GRUB, but arbitrary 'EFI applications'.
+(U)EFI systems boot using boot loaders on a special EFI System Partition.
+Many different boot loaders may be present at a time. These are not only
+traditional boot loaders like GRUB, but arbitrary 'EFI applications'.
 
 Xen or Linux kernel can be built as an EFI application too and booted directly
 from the EFI firmware. The problem is the kernels and data or config files
@@ -17,10 +17,92 @@ install files from RPM packages there directly.
 efi-boot-update script makes it easy to manage the files on the EFI system
 partition. Those files are to be installed in the regular Linux system and
 will be copied to the EFI system partition using rules defined in
-/etc/efi-boot/update.d/*.conf files.
+/etc/efi-boot/update.d/*.conf files (efi-boot-update modules).
 
 efi-boot-update will also manage EFI boot manager configuration, adding
-the configured bootloaders to the platform boot menu, provided the 'efibootmgr'
+the configured boot loaders to the platform boot menu, provided the 'efibootmgr'
 package is installed and functional.
 
+
+What is this not?
+-----------------
+
+This is not another configuration interface for the bootloaders. efi-boot-update can copy
+bootloader configuration files to the EFI system partition, but it doesn't
+care about their contents or syntax. 
+
+User Guide
+----------
+
+When efi-boot-update is installed it should be automatically called whenever
+any package containing EFI boot loader/application (or data for such
+application) is installed, upgraded or removed.
+
+The administrator may alter efi-boot-update operation editing the
+global /etc/efi-boot/update.conf file and the efi-boot-update modules
+in /etc/efi-boot/update.d (these configure rules for a specific application).
+
+The administrator is also responsible to edit any configuration files used by
+the boot loaders (usually in /etc/efi-boot).
+
+/etc/efi-boot/update.conf
+.........................
+
+This file provide global settings for the efi-boot-update script. The
+file uses POSIX shell syntax to set shell variables. Values containing
+spaces should be quoted with double quotes.
+
+Following variables can be set there:
+
+  * LABEL_PREFIX – the text to be prepended to every boot manager entry label
+    created by efi-boot-update.
+  * ORDER – preferred boot loader order. The value should contain
+    space-separated names of efi-boot-update modules in /etc/efi/update.d
+    (filenames there with '.conf' stripped).
+  * PLATFORM_DIR – subdirectory of the 'EFI' directory in the EFI system
+    partition where the EFI applications and data files will be stored.
+    The value may contain '@ARCH@', which will be replaced with the
+    architecture ('x64' or 'x32') for which the application was built (boot
+    loaders may have both 32-bit and 64-bit versions and it may be different
+    architecture that the one Linux is running).
+
+modules in /etc/efi-boot/update.d
+.................................
+
+The *.conf files in the /etc/efi-boot/update.d directory provide rules for installing
+a boot loader and creating the EFI boot manager label for it.
+
+Following variables can be be set for each module:
+
+  * ENABLED – when 'yes', then the files will be copied and a boot manager entry will be created
+    for the application (provided BINARY is also set)
+  * LABEL – label to use for the boot manager entry (defaults to the module name)
+  * BINARY – name of the EFI binary installed in /boot/efi/EFI/$PLATFORM_DIR or a
+    path to any EFI binary existing on the EFI system partition
+  * ARGS – command line arguments for the EFI application
+  * ARCH – architecture the binary is built for
+
+The module may define more configurable variables, but should use own unique prefix for them.
+
+The module file should also contain a install_files() function definition which defines
+what files are to be installed on the EFI system partition.
+
+It can contain any shell code, but should not define any new global variables. For
+convenience following are defined:
+
+  * '$DESTDIR' variable – defines the directory where the files should be copied to
+    that will be /boot/efi/EFI/$PLATFORM_DIR
+  * 'update_file' function – copies a file to the EFI partition
+
+    Usage:
+       update_file [--missingok] SOURCE DEST
+
+    Where:
+        SOURCE      – absolute path to the file to be copied
+        DEST        – destination file name. Absolute (but should be in
+                      /boot/efi) or, preferably, Relative to $DESTDIR
+        --missingok – when used, he command will not complain when the SOURCE does not exist
+
+    update_file behaviour depends on the '--verbose' and '--force' options
+    passed to the efi-boot-update script.
 
