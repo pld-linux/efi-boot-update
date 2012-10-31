@@ -116,7 +116,7 @@ remove_bootmgr_entry () {
     local bootnum
     bootnum=$(find_bootmgr_entry "$1")
     [ -n "$bootnum" ] || return 0
-    verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --delete-bootnum -b --quiet "$bootnum"
+    verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --quiet --delete-bootnum -b "$bootnum"
     echo -n "$bootnum"
 }
 
