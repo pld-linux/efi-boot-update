@@ -15,6 +15,7 @@ usage () {
     echo "  --mount, -m    Try to mount /boot/efi first"
     echo "  --verbose, -v  Verbose output"
     echo "  --force        Force file updates"
+    echo "  --auto         Automatic run from packages %post"
 }
 
 msg () {
@@ -149,13 +150,15 @@ safe_string () {
     echo -n "$*" | tr -c '[a-zA-Z0-9_]' '_'
 }
 
+ALLOW_AUTO="no"
 FORCE_UPDATES="no"
 MOUNT_EFI_PARTITION="no"
 LABEL_PREFIX=""
-DEFAULT=""
 VERBOSE="no"
 
 [ -e /etc/efi-boot/update.conf ] && . /etc/efi-boot/update.conf
+
+AUTO_RUN=no
 
 while [ -n "$*" ] ; do
     local arg
@@ -178,6 +181,10 @@ while [ -n "$*" ] ; do
             ;;
         --force)
             FORCE_UPDATES="yes"
+            ;;
+        --auto)
+            is_yes "$ALLOW_AUTO" || exit 0
+            AUTO_RUN=yes
             ;;
         *)
             usage >&2
@@ -282,6 +289,11 @@ if [ -n "$ORDER" -a "$EFIBOOTMGR" != "/bin/true" ] ; then
     if [ -n "$bootorder" ] ; then
         verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --quiet --bootorder "$bootorder"
     fi
+fi
+
+if ! is_yes "$ALLOW_AUTO" && ! is_yes "$AUTO_RUN"; then
+    msg "ALLOW_AUTO is not enabled in /etc/efi-boot/update.conf,"
+    msg "files will not be automatically updated on upgrades."
 fi
 
 # vi: ft=sh sw=4 sts=4 et
