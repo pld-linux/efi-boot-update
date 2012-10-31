@@ -145,6 +145,10 @@ add_bootmgr_entry () {
     echo -n "$bootnum"
 }
 
+safe_string () {
+    echo -n "$*" | tr -c '[a-zA-Z0-9_]' '_'
+}
+
 FORCE_UPDATES="no"
 MOUNT_EFI_PARTITION="no"
 LABEL_PREFIX=""
@@ -257,7 +261,7 @@ for bootloader_conf in /etc/efi-boot/update.d/*.conf ; do
     install_files
     if [ -n "$BINARY" ] ; then
             bootnum="$(add_bootmgr_entry "$LABEL" "$BINARY" "$ARGS")"
-            eval "_${CONFIG_NAME}_bootnum=\"$bootnum\""
+            eval "_$(safe_string ${CONFIG_NAME})_bootnum=\"$bootnum\""
     fi
 done
 
@@ -266,9 +270,9 @@ if [ -n "$ORDER" -a "$EFIBOOTMGR" != "/bin/true" ] ; then
     tail="$($EFIBOOTMGR | awk '/^BootOrder:/ {gsub(/,/," ",$2); print $2}')"
     head=""
     for config_name in $ORDER ; do
-        eval "bootnum=\$_${config_name}_bootnum"
+        eval "bootnum=\$_$(safe_string ${config_name})_bootnum"
         if [ -z "$bootnum" ] ; then
-            msg "Cannot find '$config_name' config - won't add to boot order."
+            verbose "Cannot find '$config_name' config - won't add to boot order."
             continue
         fi
         tail="$(list_remove "$tail" "$bootnum")"
