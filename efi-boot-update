@@ -247,7 +247,7 @@ for bootloader_conf in /etc/efi-boot/update.d/*.conf ; do
     local efi_arch
     if [[ "$ARCH" = i?86 || "$ARCH" = pentium[45] || "$ARCH" = "athlon" ]] ; then
         # %ix86
-        efi_arch=x32
+        efi_arch=ia32
     elif [[ "$ARCH" = "x86_64" || "$ARCH" = "amd64" || "$ARCH" = "ia32e" ]] ; then
         # %x8664
         efi_arch=x64

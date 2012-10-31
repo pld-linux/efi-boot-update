@@ -9,7 +9,7 @@ Group:		Applications
 Source0:	%{name}
 Source1:	update.conf
 Source2:	shellx64.conf
-Source3:	shellx32.conf
+Source3:	shellia32.conf
 Source4:	grub.conf
 Source10:	README
 Source11:	TODO
@@ -35,7 +35,7 @@ help2man --no-info ./%{name} > %{name}.8
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/efi-boot/update.d
-install -d $RPM_BUILD_ROOT{/lib/efi/{x32,x64},%{_sbindir},%{_mandir}/man8}
+install -d $RPM_BUILD_ROOT{/lib/efi/{ia32,x64},%{_sbindir},%{_mandir}/man8}
 
 install %{name} $RPM_BUILD_ROOT%{_sbindir}/%{name}
 install %{name}.8 $RPM_BUILD_ROOT%{_mandir}/man8/%{name}.8
@@ -61,6 +61,6 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.d/*.conf
 %dir /etc/efi-boot/update.d
 %dir /lib/efi
-%dir /lib/efi/x32
+%dir /lib/efi/ia32
 %dir /lib/efi/x64
 %{_mandir}/man8/%{name}.8*
