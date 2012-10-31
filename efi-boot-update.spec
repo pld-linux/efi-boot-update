@@ -8,15 +8,14 @@ License:	GPL v2
 Group:		Applications
 Source0:	%{name}
 Source1:	update.conf
-Source2:	shellx64.conf
-Source3:	shellia32.conf
-Source4:	grub.conf
-Source5:	grub-installed.conf
+Source2:	grub.conf
+Source3:	grub-installed.conf
 Source10:	README
 Source11:	TODO
 URL:		http://www.pld-linux.org/
 BuildRequires:	help2man
 Suggests:	efibootmgr
+Suggests:	efi-shell-x64
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_sbindir /sbin
@@ -41,8 +40,7 @@ install -d $RPM_BUILD_ROOT{/lib/efi/{ia32,x64},%{_sbindir},%{_mandir}/man8}
 install %{name} $RPM_BUILD_ROOT%{_sbindir}/%{name}
 install %{name}.8 $RPM_BUILD_ROOT%{_mandir}/man8/%{name}.8
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/efi-boot
-install %{SOURCE2} %{SOURCE3} %{SOURCE4} %{SOURCE5} \
-				$RPM_BUILD_ROOT/etc/efi-boot/update.d
+install %{SOURCE2} %{SOURCE3} $RPM_BUILD_ROOT/etc/efi-boot/update.d
 
 %clean
 rm -rf $RPM_BUILD_ROOT
