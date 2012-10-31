@@ -236,7 +236,7 @@ for bootloader_conf in /etc/efi-boot/update.d/*.conf ; do
     LABEL="$LABEL_PREFIX$LABEL"
 
     if ! is_yes "$ENABLED" ; then
-        remove_bootmgr_entry "$LABEL"
+        remove_bootmgr_entry "$LABEL" >/dev/null
         continue
     fi
 
