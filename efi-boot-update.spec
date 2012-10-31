@@ -35,7 +35,7 @@ help2man --no-info ./%{name} > %{name}.8
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/efi-boot/update.d
-install -d $RPM_BUILD_ROOT{%{_prefix}/lib{,64}/efi,%{_sbindir},%{_mandir}/man8}
+install -d $RPM_BUILD_ROOT{/lib/efi/{x32,x64},%{_sbindir},%{_mandir}/man8}
 
 install %{name} $RPM_BUILD_ROOT%{_sbindir}/%{name}
 install %{name}.8 $RPM_BUILD_ROOT%{_mandir}/man8/%{name}.8
@@ -60,8 +60,7 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.conf
 %config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.d/*.conf
 %dir /etc/efi-boot/update.d
-%dir %{_libdir}/efi
-%if "%{_libdir}" != "%{_prefix}/lib"
-%dir %{_prefix}/lib/efi
-%endif
+%dir /lib/efi
+%dir /lib/efi/x32
+%dir /lib/efi/x64
 %{_mandir}/man8/%{name}.8*
