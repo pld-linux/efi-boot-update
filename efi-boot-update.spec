@@ -1,11 +1,11 @@
 # $Revision: 1.81 $, $Date: 2012/04/20 10:52:52 $
-#
 Summary:	EFI bootloader updater
+Summary(pl.UTF-8):	Skrypt do uaktualniania bootloaderów EFI
 Name:		efi-boot-update
 Version:	0.1
 Release:	1
 License:	GPL v2
-Group:		Applications
+Group:		Applications/System
 Source0:	%{name}
 Source1:	update.conf
 Source2:	grub.conf
@@ -22,6 +22,9 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
 Script to update EFI bootloaders.
+
+%description -l pl.UTF-8
+Skrypt do uaktualniania bootloaderów EFI.
 
 %prep
 %setup -qcT
@@ -46,7 +49,7 @@ install %{SOURCE2} %{SOURCE3} $RPM_BUILD_ROOT/etc/efi-boot/update.d
 rm -rf $RPM_BUILD_ROOT
 
 # Most efi-boot-update-managed loaders will use kernel files
-# even if the kernel itself is not build as EFI
+# even if the kernel itself is not built as EFI
 %triggerin -- kernel
 /sbin/efi-boot-update --auto || :
 %triggerin -- kernel-longterm
@@ -58,8 +61,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_sbindir}/%{name}
 %dir /etc/efi-boot
 %config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.conf
-%config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.d/*.conf
 %dir /etc/efi-boot/update.d
+%config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.d/grub.conf
+%config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.d/grub-installed.conf
 %dir /lib/efi
 %dir /lib/efi/ia32
 %dir /lib/efi/x64
