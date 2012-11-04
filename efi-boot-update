@@ -66,10 +66,17 @@ update_file () {
         esac
     done
     src="$1"; shift
-    dst="$2"; shift
+    dst="$1"; shift
     if [ -n "$*" ] ; then
         msg "update_file: unexpected arguments: $*"
         return 1
+    fi
+    if [ -z "$src" ] ; then
+        msg "update_file: no source file"
+        return 1
+    fi
+    if [ -z "$dst" ] ; then
+        dst=`basename "$src"`
     fi
     if [ "${dst#/}" = "${dst}" ] ; then
         # relative path
