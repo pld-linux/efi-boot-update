@@ -143,13 +143,13 @@ add_bootmgr_entry () {
     binary="$(echo -nE "$binary"|sed -e's;/;\\;g')"
 
     if [ -n "$bootnum" ] ; then
-        verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --quiet \
-                            --bootnum "$bootnum" --loader "$binary" -u "$args"
-    else
-        verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --create \
-                            --quiet --label "$label" --loader "$binary" -u "$args"
-        bootnum="$(find_bootmgr_entry "$label")"
+       # efibootmgr doesn't seem to update the arguments
+       # we need to remove old entry and create a new one 
+       verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --quiet --delete-bootnum -b "$bootnum"
     fi
+    verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --create \
+                        --quiet --label "$label" --loader "$binary" -u "$args"
+    bootnum="$(find_bootmgr_entry "$label")"
     echo -n "$bootnum"
 }
 
