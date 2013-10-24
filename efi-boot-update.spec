@@ -10,6 +10,8 @@ Source0:	%{name}
 Source1:	update.conf
 Source2:	grub.conf
 Source3:	grub-installed.conf
+Source4:	kernel.conf
+Source5:	kernel-old.conf
 Source10:	README
 Source11:	TODO
 URL:		http://www.pld-linux.org/
@@ -44,6 +46,7 @@ install %{name} $RPM_BUILD_ROOT%{_sbindir}/%{name}
 install %{name}.8 $RPM_BUILD_ROOT%{_mandir}/man8/%{name}.8
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/efi-boot
 install %{SOURCE2} %{SOURCE3} $RPM_BUILD_ROOT/etc/efi-boot/update.d
+install %{SOURCE4} %{SOURCE5} $RPM_BUILD_ROOT/etc/efi-boot/update.d
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -64,6 +67,8 @@ rm -rf $RPM_BUILD_ROOT
 %dir /etc/efi-boot/update.d
 %config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.d/grub.conf
 %config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.d/grub-installed.conf
+%config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.d/kernel.conf
+%config(noreplace) %verify(not md5 mtime size) /etc/efi-boot/update.d/kernel-old.conf
 %dir /lib/efi
 %dir /lib/efi/ia32
 %dir /lib/efi/x64
