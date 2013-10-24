@@ -68,6 +68,8 @@ Following variables can be set there:
     architecture ('x64' or 'x32') for which the application was built (boot
     loaders may have both 32-bit and 64-bit versions and it may be different
     architecture that the one Linux is running).
+    EFI path to this directory (\EFI\...) will be available as
+    '@EFI_PLATFORM_PATH@' for setting the $ARGS module parameter.
 
 modules in /etc/efi-boot/update.d
 .................................
@@ -83,7 +85,8 @@ Following variables can be be set for each module:
     name)
   * BINARY – name of the EFI binary installed in /boot/efi/EFI/$PLATFORM_DIR
     or a path to any EFI binary existing on the EFI system partition
-  * ARGS – command line arguments for the EFI application
+  * ARGS – command line arguments for the EFI application (can contain
+    '@EFI_PLATFORM_PATH@' and '@ARCH@' macros)
   * ARCH – architecture the binary is built for
 
 The module may define more configurable variables, but should use own unique
@@ -97,6 +100,7 @@ For convenience following are defined:
 
   * '$DESTDIR' variable – defines the directory where the files should be
     copied to that will be /boot/efi/EFI/$PLATFORM_DIR
+
   * 'update_file' function – copies a file to the EFI partition
 
     Usage:

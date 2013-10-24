@@ -268,7 +268,14 @@ for bootloader_conf in /etc/efi-boot/update.d/*.conf ; do
     else
         efi_arch="$ARCH"
     fi
-    DESTDIR="/boot/efi/EFI/$(echo -n "$PLATFORM_DIR"|sed -e's/@ARCH@/'"$efi_arch"'/')"
+
+    PLATFORM_PATH="EFI/$(echo -nE "$PLATFORM_DIR"|sed -e's/@ARCH@/'"$efi_arch"'/')"
+    local escaped_EFI_PLATFORM_PATH="$(echo -nE "$PLATFORM_PATH"|sed -e's;/;\\\\;g')"
+    DESTDIR="/boot/efi/$PLATFORM_PATH"
+    ARGS="$(echo -nE "$ARGS"|sed -e's/@ARCH@/'"$efi_arch"'/;s/@EFI_PLATFORM_PATH@/'"$escaped_EFI_PLATFORM_PATH"'/g')"
+
+    verbose "ARGS: '$ARGS'"
+
     mkdir -p "$DESTDIR"
 
     verbose "Updating $LABEL..."
