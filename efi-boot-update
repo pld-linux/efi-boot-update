@@ -143,11 +143,11 @@ add_bootmgr_entry () {
     binary="$(echo -nE "$binary"|sed -e's;/;\\;g')"
 
     if [ -n "$bootnum" ] ; then
-        echo -n "$args" | verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --quiet \
-                            --bootnum "$bootnum" --loader "$binary" -@ -
+        verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --quiet \
+                            --bootnum "$bootnum" --loader "$binary" -u "$args"
     else
-        echo -n "$args" | verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --create \
-                            --quiet --label "$label" --loader "$binary" -@ -
+        verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --create \
+                            --quiet --label "$label" --loader "$binary" -u "$args"
         bootnum="$(find_bootmgr_entry "$label")"
     fi
     echo -n "$bootnum"
