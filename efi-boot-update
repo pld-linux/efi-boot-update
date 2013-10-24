@@ -129,9 +129,9 @@ remove_bootmgr_entry () {
 }
 
 add_bootmgr_entry () {
-    local label=$1
-    local binary=$2
-    local args=$3
+    local label="$1"
+    local binary="$2"
+    local args="$3"
     local bootnum
     bootnum=$(find_bootmgr_entry "$label")
 
