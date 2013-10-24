@@ -19,18 +19,18 @@ usage () {
 }
 
 msg () {
-    echo "efi-boot-update: $*" >&2
+    echo -E "efi-boot-update: $*" >&2
 }
 
 verbose () {
     if is_yes "$VERBOSE" ; then 
-        echo "efi-boot-update: $*" >&2
+        echo -E "efi-boot-update: $*" >&2
     fi
 }
 
 verbose_cmd () {
     if is_yes "$VERBOSE" ; then
-        echo "+$*" >&2
+        echo -E "+$*" >&2
     fi
     "$@"
 }
@@ -42,7 +42,7 @@ list_remove () {
         if [ "$item" = "$2" ] ; then
             continue
         fi
-        echo -n "$item "
+        echo -nE "$item "
     done
 }
 
@@ -140,7 +140,7 @@ add_bootmgr_entry () {
         binary="$DESTDIR/$binary"
     fi
     binary="${binary#/boot/efi}"
-    binary="$(echo -n "$binary"|sed -e's;/;\\;g')"
+    binary="$(echo -nE "$binary"|sed -e's;/;\\;g')"
 
     if [ -n "$bootnum" ] ; then
         echo -n "$args" | verbose_cmd $EFIBOOTMGR $EFIBOOTMGR_OPTS --quiet \
