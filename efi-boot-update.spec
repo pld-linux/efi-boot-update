@@ -3,7 +3,7 @@ Summary:	EFI bootloader updater
 Summary(pl.UTF-8):	Skrypt do uaktualniania bootloaderów EFI
 Name:		efi-boot-update
 Version:	0.2
-Release:	2
+Release:	3
 License:	GPL v2
 Group:		Applications/System
 Source0:	%{name}
@@ -19,6 +19,8 @@ BuildRequires:	help2man
 Suggests:	efibootmgr
 Suggests:	efi-shell-x64
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
+
+%define		_debugsource_packages	0
 
 %define		_sbindir /sbin
 
